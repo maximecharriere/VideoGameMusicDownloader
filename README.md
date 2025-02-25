@@ -1,11 +1,11 @@
 # VideoGameMusicDownloader
 
-A Python script to download music albums from KH Insider website named "[Video Game Music](https://downloads.khinsider.com/)" for free.
+A Python script to download music albums from "[Video Game Music](https://downloads.khinsider.com/)" website, for free.
 
 ## Credits & Support
 
-- Special thanks to KH Insider for hosting these video game music files and to all uploaders for their valuable contributions
-- Consider supporting KH Insider by [upgrading your account](https://downloads.khinsider.com/forums/index.php?account/upgrades) to get direct album downloads
+- Special thanks to KH Insider for hosting these video game music files and to all uploaders for their valuable contributions ❤
+- Consider supporting KH Insider by [upgrading your account](https://downloads.khinsider.com/forums/index.php?account/upgrades) to get direct album downloads.
 - Whenever possible, please support the artists by purchasing official soundtracks through legitimate channels.
 
 ## Features
