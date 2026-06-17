@@ -176,22 +176,39 @@ def download_album_images(soup, directory='downloads'):
         except Exception as e:
             print(f"Error downloading image {image_url}: {str(e)}")
 
-def download_tracks(soup, directory='downloads'):
+def get_expected_filename(href, fmt):
+    """Derive the local filename for a track given its album-page href and target format."""
+    raw = href.split('/')[-1]
+    # Album page hrefs use double-encoded spaces (%2520 → %20 → ' ')
+    filename = unquote(unquote(raw))
+    base = os.path.splitext(filename)[0]
+    return f"{base}.{fmt}"
+
+def download_tracks(soup, directory='downloads', fmt='mp3'):
     track_links = soup.select("table#songlist td.playlistDownloadSong a")
     if not track_links:
         print("No tracks found")
         return
-    
+
     print(f"Found {len(track_links)} tracks")
     for link in track_links:
+        # For a single format, check existence before hitting the track page
+        if fmt != 'all':
+            expected = get_expected_filename(link["href"], fmt)
+            if os.path.exists(os.path.join(directory, expected)):
+                print(f"Skipping already downloaded: {expected}")
+                continue
+
         track_page_url = BASE_URL + link["href"]
         print(f"\nProcessing track: {track_page_url}")
         try:
-            soup = get_soup(track_page_url)
-            download_links = soup.select("a span.songDownloadLink")
-            
+            track_soup = get_soup(track_page_url)
+            download_links = track_soup.select("a span.songDownloadLink")
+
             for download_link in download_links:
                 file_url = download_link.find_parent("a")["href"]
+                if fmt != 'all' and not file_url.lower().endswith(f'.{fmt}'):
+                    continue
                 try:
                     download_file(file_url, rootdirectory=directory)
                 except Exception as e:
@@ -199,23 +216,18 @@ def download_tracks(soup, directory='downloads'):
         except Exception as e:
             print(f"Error downloading track {track_page_url}: {str(e)}")
 
-def scrape_album(album_url):
+def scrape_album(album_url, fmt='mp3'):
     soup = get_soup(album_url)
     album_info = AlbumInfo(soup)
-    
+
     print(f"Downloading album: {album_info.title}")
-    
+
     if not os.path.exists(album_info.safe_dirname):
         os.makedirs(album_info.safe_dirname)
-    
-    # Download info file first
+
     download_info_file(soup, directory=album_info.safe_dirname)
-    
-    # Download album images
     download_album_images(soup, directory=album_info.safe_dirname)
-    
-    # Download tracks
-    download_tracks(soup, directory=album_info.safe_dirname)
+    download_tracks(soup, directory=album_info.safe_dirname, fmt=fmt)
 
 def validate_album_url(url):
     """Validate that the URL is a khinsider album URL"""
@@ -234,10 +246,12 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Download music albums from the khinsider "Video Game Music" website.')
     parser.add_argument('album_url', type=validate_album_url,
                       help=f'The URL of the album to download (e.g., {BASE_URL}/game-soundtracks/album/album-name)')
-    
+    parser.add_argument('--format', choices=['mp3', 'flac', 'all'], default='mp3',
+                      help='Audio format to download: mp3, flac, or all (default: mp3)')
+
     try:
         args = parser.parse_args()
-        scrape_album(args.album_url)
+        scrape_album(args.album_url, fmt=args.format)
     except KeyboardInterrupt:
         print("\nDownload interrupted by user")
     except Exception as e:
