@@ -1,5 +1,5 @@
 import os
-import requests
+from curl_cffi import requests
 from bs4 import BeautifulSoup
 from urllib.parse import unquote, urlparse
 import time
@@ -10,11 +10,8 @@ import argparse
 BASE_URL = "https://downloads.khinsider.com"
 DOWNLOAD_DELAY = 0  # Delay in seconds between downloads
 
-HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-    "Accept-Language": "en-US,en;q=0.5",
-}
+# Impersonate a real Chrome browser (TLS fingerprint + headers) to get past Cloudflare
+session = requests.Session(impersonate="chrome")
 
 class AlbumInfo:
     def __init__(self, soup):
@@ -52,7 +49,7 @@ class AlbumInfo:
     
     def _extract_from_info_file(self, info_url):
         try:
-            response = requests.get(info_url, headers=HEADERS)
+            response = session.get(info_url)
             response.raise_for_status()
             info = response.text
             
@@ -87,7 +84,7 @@ class AlbumInfo:
         return safe_name
     
 def get_soup(url):
-    response = requests.get(url, headers=HEADERS)
+    response = session.get(url)
     response.raise_for_status()
     return BeautifulSoup(response.text, "html.parser")
 
@@ -100,56 +97,59 @@ def format_size(size_bytes):
     return f"{size_bytes:.2f} TB"
 
 def download_file(url, rootdirectory, subdirectory=None, filename=None):
-    response = requests.get(url, headers=HEADERS, stream=True)
-    response.raise_for_status()
+    response = session.get(url, stream=True)
+    try:
+        response.raise_for_status()
     
-    if filename is None:
-        content_disposition = response.headers.get('content-disposition')
-        if content_disposition:
-            filename = content_disposition.split('filename=')[1].strip('"')
-        else:
-            filename = unquote(url.split('/')[-1])
+        if filename is None:
+            content_disposition = response.headers.get('content-disposition')
+            if content_disposition:
+                filename = content_disposition.split('filename=')[1].strip('"')
+            else:
+                filename = unquote(url.split('/')[-1])
     
-    target_dir = rootdirectory
+        target_dir = rootdirectory
     
-    # Handle subdirectory
-    if subdirectory:
-        target_dir = os.path.join(rootdirectory, subdirectory)
+        # Handle subdirectory
+        if subdirectory:
+            target_dir = os.path.join(rootdirectory, subdirectory)
         
-    if not os.path.exists(target_dir):
-        os.makedirs(target_dir)
+        if not os.path.exists(target_dir):
+            os.makedirs(target_dir)
     
-    download_path = os.path.join(target_dir, filename)
+        download_path = os.path.join(target_dir, filename)
     
-    if os.path.exists(download_path):
-        print(f"Warning: File already exists and will be skipped: {filename}")
-        return
+        if os.path.exists(download_path):
+            print(f"Warning: File already exists and will be skipped: {filename}")
+            return
     
-    # Get total file size
-    total_size = int(response.headers.get('content-length', 0))
-    formatted_size = format_size(total_size)
+        # Get total file size
+        total_size = int(response.headers.get('content-length', 0))
+        formatted_size = format_size(total_size)
     
-    # Initialize progress variables
-    block_size = 8192
-    downloaded = 0
+        # Initialize progress variables
+        block_size = 8192
+        downloaded = 0
     
-    print(f"Downloading: {filename} ({formatted_size})", end='', flush=True)
+        print(f"Downloading: {filename} ({formatted_size})", end='', flush=True)
     
-    with open(download_path, "wb") as file:
-        for chunk in response.iter_content(chunk_size=block_size):
-            downloaded += len(chunk)
-            file.write(chunk)
+        with open(download_path, "wb") as file:
+            for chunk in response.iter_content(chunk_size=block_size):
+                downloaded += len(chunk)
+                file.write(chunk)
             
-            # Calculate progress
-            if total_size > 0:  # Avoid division by zero
-                progress = (downloaded / total_size) * 100
-                status = f"\rDownloading: {filename} ({formatted_size}) [{progress:6.2f}%]"
-                sys.stdout.write(status)
-                sys.stdout.flush()
+                # Calculate progress
+                if total_size > 0:  # Avoid division by zero
+                    progress = (downloaded / total_size) * 100
+                    status = f"\rDownloading: {filename} ({formatted_size}) [{progress:6.2f}%]"
+                    sys.stdout.write(status)
+                    sys.stdout.flush()
     
-    sys.stdout.write(f"\rDownloaded: {filename} ({formatted_size}) [100.00%]\n")
-    sys.stdout.flush()
-    time.sleep(DOWNLOAD_DELAY)
+        sys.stdout.write(f"\rDownloaded: {filename} ({formatted_size}) [100.00%]\n")
+        sys.stdout.flush()
+        time.sleep(DOWNLOAD_DELAY)
+    finally:
+        response.close()
 
 def download_info_file(soup, directory='downloads'):
     info_link = soup.select_one("a i.txt_info_file")
