@@ -29,7 +29,7 @@ Conventions for working on this repository. They describe how the existing code 
 
 ## Testing changes
 
-- There is no test suite. Verify changes by running the script against a real album from a temporary directory (downloads are written to the current directory), and check that the output files are real media (e.g. MP3s start with `ID3`) rather than HTML error pages.
+- There is no test suite. Verify changes by running the script against a real album with `-o` pointing to a temporary directory, and check that the output files are real media (e.g. MP3s start with `ID3`) rather than HTML error pages.
 - Delete the temporary download directory afterwards.
 
 ## Docs

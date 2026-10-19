@@ -18,7 +18,7 @@ Follow the conventions in @CODE_PRACTICES.md (code style, error handling, testin
 .venv/Scripts/python main.py "https://downloads.khinsider.com/game-soundtracks/album/<album-slug>" --format flac
 ```
 
-Downloads are written to an `Album Name (Year)/` directory in the **current working directory**. When test-running, `cd` into a temporary directory first so album folders don't land in the repo (only `downloads/` is gitignored).
+Downloads are written to `<output>/Album Name (Year)/`, where `<output>` is set with `-o/--output` (default: `downloads`, relative to the current working directory and gitignored). When test-running, pass `-o` pointing to a temporary directory.
 
 ## Cloudflare protection
 

@@ -216,18 +216,20 @@ def download_tracks(soup, directory='downloads', fmt='mp3'):
         except Exception as e:
             print(f"Error downloading track {track_page_url}: {str(e)}")
 
-def scrape_album(album_url, fmt='mp3'):
+def scrape_album(album_url, fmt='mp3', output_dir='downloads'):
     soup = get_soup(album_url)
     album_info = AlbumInfo(soup)
+    album_dir = os.path.join(output_dir, album_info.safe_dirname)
 
     print(f"Downloading album: {album_info.title}")
+    print(f"Output directory: {os.path.abspath(album_dir)}")
 
-    if not os.path.exists(album_info.safe_dirname):
-        os.makedirs(album_info.safe_dirname)
+    if not os.path.exists(album_dir):
+        os.makedirs(album_dir)
 
-    download_info_file(soup, directory=album_info.safe_dirname)
-    download_album_images(soup, directory=album_info.safe_dirname)
-    download_tracks(soup, directory=album_info.safe_dirname, fmt=fmt)
+    download_info_file(soup, directory=album_dir)
+    download_album_images(soup, directory=album_dir)
+    download_tracks(soup, directory=album_dir, fmt=fmt)
 
 def validate_album_url(url):
     """Validate that the URL is a khinsider album URL"""
@@ -248,10 +250,12 @@ if __name__ == "__main__":
                       help=f'The URL of the album to download (e.g., {BASE_URL}/game-soundtracks/album/album-name)')
     parser.add_argument('--format', choices=['mp3', 'flac', 'all'], default='mp3',
                       help='Audio format to download: mp3, flac, or all (default: mp3)')
+    parser.add_argument('-o', '--output', default='downloads',
+                      help='Root folder in which album folders are created (default: downloads)')
 
     try:
         args = parser.parse_args()
-        scrape_album(args.album_url, fmt=args.format)
+        scrape_album(args.album_url, fmt=args.format, output_dir=args.output)
     except KeyboardInterrupt:
         print("\nDownload interrupted by user")
     except Exception as e:

@@ -60,8 +60,14 @@ python main.py "https://downloads.khinsider.com/game-soundtracks/album/album-nam
 | `--format flac` | FLAC files only (when the album offers them) |
 | `--format all` | Every format available for the album |
 
+Albums are saved in a `downloads/` folder by default. Use `-o` / `--output` to choose another root folder:
+
+```bash
+python main.py "https://downloads.khinsider.com/game-soundtracks/album/album-name" -o "D:/Music/Game Soundtracks"
+```
+
 The script will:
-1. Create a directory named after the album, in the current directory
+1. Create a directory named after the album, inside the output folder
 2. Download the album information file
 3. Download all album artwork
 4. Download all music tracks, skipping files that already exist
@@ -70,16 +76,17 @@ The script will:
 
 Downloads are organized as follows (example with `--format all`):
 ```
-Album Name (Year)/
-├── info.txt
-├── images/
-│   ├── cover.jpg
-│   └── other-artwork.jpg
-├── track1.mp3
-├── track1.flac
-├── track2.mp3
-├── track2.flac
-└── ...
+downloads/
+└── Album Name (Year)/
+    ├── info.txt
+    ├── images/
+    │   ├── cover.jpg
+    │   └── other-artwork.jpg
+    ├── track1.mp3
+    ├── track1.flac
+    ├── track2.mp3
+    ├── track2.flac
+    └── ...
 ```
 
 ## Troubleshooting
