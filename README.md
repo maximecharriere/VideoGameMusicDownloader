@@ -17,11 +17,13 @@ A Python script to download music albums from "[Video Game Music](https://downlo
 - Shows download progress for each file
 - Validates album URLs before downloading
 - Creates safe filenames for all operating systems
-- Downloads both MP3 and FLAC formats when available
+- Choose the audio format to download: MP3, FLAC, or both
+- Skips tracks that were already downloaded, so an interrupted download can be resumed
+- Works with the site's Cloudflare protection by imitating a real Chrome browser (via [curl_cffi](https://github.com/lexiforest/curl_cffi))
 
 ## Requirements
 
-- Python 3.6 or higher
+- Python 3.10 or higher
 - Required packages listed in requirements.txt
 
 ## Installation
@@ -45,15 +47,28 @@ Run the script with an album URL from KH Insider:
 python main.py "https://downloads.khinsider.com/game-soundtracks/album/album-name"
 ```
 
+By default only MP3 files are downloaded. Use `--format` to choose:
+
+```bash
+python main.py "https://downloads.khinsider.com/game-soundtracks/album/album-name" --format flac
+python main.py "https://downloads.khinsider.com/game-soundtracks/album/album-name" --format all
+```
+
+| Option | Downloads |
+|---|---|
+| `--format mp3` (default) | MP3 files only |
+| `--format flac` | FLAC files only (when the album offers them) |
+| `--format all` | Every format available for the album |
+
 The script will:
-1. Create a directory named after the album
+1. Create a directory named after the album, in the current directory
 2. Download the album information file
 3. Download all album artwork
-4. Download all music tracks
+4. Download all music tracks, skipping files that already exist
 
 ## Directory Structure
 
-Downloads are organized as follows:
+Downloads are organized as follows (example with `--format all`):
 ```
 Album Name (Year)/
 ├── info.txt
@@ -66,6 +81,10 @@ Album Name (Year)/
 ├── track2.flac
 └── ...
 ```
+
+## Troubleshooting
+
+**`403 Client Error: Forbidden`**: the site is protected by Cloudflare, which blocks requests that don't look like they come from a real browser. Make sure the dependencies are up to date (`pip install -r requirements.txt`) so the script uses `curl_cffi`. If Cloudflare tightens its checks, the 403 may come back even with `curl_cffi`.
 
 ## Legal Notice
 
